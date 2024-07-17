@@ -13,64 +13,117 @@ use App\Notifications\TransactionCreated;
 
 use Illuminate\Support\Facades\Notification;
 
-
 class CheckoutController extends Controller
 {
-    public function process(Request $request){
-        // Save User Data
-        $user = Auth::user();
-        $user->update($request->except('total_price'));
+    private function generateUniqueCode($prefix, $email)
+    {
+        $dateNow = now()->format('YmdHis');
+        $uniqueString = $email . $dateNow;
 
-        // Proses Checkout
-        $code = 'GMK-' .  mt_rand(000000,999999);
-        $carts =  Cart::with(['product','user'])
-                    ->where('users_id', Auth::user()->id)
-                    ->get();
-        
-        // Transaction Create
+        $code = $prefix . strtoupper(substr(hash('sha256', $uniqueString), 0, 9));
+
+        return $code;
+    }
+
+    private function calculateTotalPrice()
+    {
+        $totalProduct = 0;
+        $tax = 2500;
+        $allTotal = $tax;
+
+        $carts = Cart::where('users_id', auth()->id())->get();
+        foreach ($carts as $cart) {
+            $totalProduct += $cart->product->price * $cart->quantity;
+        }
+        $allTotal += $totalProduct;
+
+        return [$totalProduct, $allTotal];
+    }
+
+    public function index()
+    {
+        return view('pages.success');
+    }
+
+    public function process(Request $request)
+    {
+        // Set your Merchant Server Key
+        \Midtrans\Config::$serverKey = config('midtrans.serverKey');
+        // Set to Development/Sandbox Environment (default). Set to true for Production Environment (accept real transaction).
+        \Midtrans\Config::$isProduction = config('midtrans.isProduction');
+        // Set sanitization on (default)
+        \Midtrans\Config::$isSanitized = true;
+        // Set 3DS transaction for credit card to true
+        \Midtrans\Config::$is3ds = true;
+
+        //? Calculate Total Price
+        [$totalProduct, $allTotal] = $this->calculateTotalPrice();
+
+        //? Ambil User Data
+        $user = Auth::user();
+
+        //? Generate Code
+        $code = $this->generateUniqueCode('GMK', $user->email);
+
+        $carts = Cart::with(['product', 'user'])
+            ->where('users_id', Auth::user()->id)
+            ->get();
+
+        //? Transaction Create
         $transaction = Transaction::create([
             'users_id' => Auth::user()->id,
-            'tax_price' => 0,
-            'total_price' => $request->total_price,
+            'tax_price' => 2500,
+            'total_price' => $allTotal,
             'transaction_status' => 'PENDING',
-            'code' => $code
+            'code' => $code,
         ]);
 
-        
+        $params = [
+            'transaction_details' => [
+                'order_id' => $code,
+                'gross_amount' => $allTotal,
+            ],
+            'customer_details' => [
+                'name' => Auth::user()->name,
+                'email' => Auth::user()->email,
+            ],
+        ];
+
+        $snapToken = \Midtrans\Snap::getSnapToken($params);
+
+        $transaction->snap_token = $snapToken;
+        $transaction->save();
 
         // Foreach Transaction Detail
         foreach ($carts as $cart) {
-            $trx = 'TRX-' . mt_rand(000000,999999);
+            $code = $this->generateUniqueCode('STF', $user->email);
 
             TransactionDetail::create([
                 'transactions_id' => $transaction->id,
                 'products_id' => $cart->product->id,
                 'price' => $cart->product->price,
                 'delivery_status' => 'PENDING',
-                'nomor_pemesanan' => '',
-                'code' => $trx,
-                'catatan'=> Auth::user()->catatan_beli,
-                'metode_bayar'=> Auth::user()->metode_pembayaran
+                'code' => $code,
+                'notes' => $cart->notes,
             ]);
 
             $sellerIds[] = $cart->product->users_id;
         }
-        
 
         $detailToSeller = [
             'greeting' => 'Terdapat Transaksi Cuy',
             'body' => 'Ini pembayaranmu',
             'actiontext' => 'Ini Isinya',
             'actionurl' => '/',
-            'lastline' => 'Footer'
+            'lastline' => 'Footer',
         ];
-        
+
         $detailToBuyyer = [
             'greeting' => 'Transaksimu Sukses Cuy',
             'body' => 'Ini pembayaranmu',
             'actiontext' => 'Ini Isinya',
             'actionurl' => '/',
-            'lastline' => 'Footer'
+            'lastline' => 'Footer',
         ];
 
         // Send Email to Multi Seller
@@ -85,8 +138,8 @@ class CheckoutController extends Controller
 
         // Send Mail to Buyyer
         Notification::route('mail', [
-                Auth::user()->email => Auth::user()->name,
-            ])->notify(new TransactionCreated($detailToBuyyer));
+            Auth::user()->email => Auth::user()->name,
+        ])->notify(new TransactionCreated($detailToBuyyer));
 
         /* dd('Done!'); */
 
@@ -97,11 +150,16 @@ class CheckoutController extends Controller
         // Delete Cart Data
         Cart::where('users_id', Auth::user()->id)->delete();
 
-        return view('pages.success');
-        
+        /*  return view('pages.success', [
+            'transaction'=> $transaction
+        ]); */
 
+        return response()->json([
+            'status' => 'success',
+            'snap_token' => $transaction->snap_token,
+        ]);
     }
-    
+
     /* public function callback(Request $request){
 
     } */

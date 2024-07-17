@@ -49,9 +49,12 @@ Route::get('/dashboard/category', [App\Http\Controllers\DashboardController::cla
 
 Route::group(['middleware' => ['auth']], function(){
     Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart');
+    
+    Route::put('/cart/{id}', [App\Http\Controllers\CartController::class, 'update'])->name('cart-update');
 
     Route::delete('/cart/{id}', [App\Http\Controllers\CartController::class, 'delete'])->name('cart-delete');
 
+    Route::get('/checkout', [App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout-success');
 
     Route::post('/checkout', [App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout');
 

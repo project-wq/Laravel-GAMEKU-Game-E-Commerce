@@ -19,10 +19,8 @@ class TransactionDetail extends Model
       'products_id',
       'price',
       'delivery_status',
-      'nomor_pemesanan',
       'code',
-      'catatan',
-      'metode_bayar'
+      'notes'
     ];
 
     /**

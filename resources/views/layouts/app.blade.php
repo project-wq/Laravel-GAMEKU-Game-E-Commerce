@@ -37,8 +37,8 @@
     @include('includes.csfloating')
 
     <!-- Bootstrap core JavaScript -->
-    @stack('prepend-script')
     @include('includes.script')
+    @stack('prepend-script')
     @stack('addon-script')
     
   </body>

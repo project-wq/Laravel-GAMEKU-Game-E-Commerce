@@ -9759,9 +9759,27 @@ footer p {
     font-weight: 200;
     font-size: 14px;
     line-height: 21px;
+    color: #737373;
+    margin-bottom: 8px;
+}
+.page-details .store-heading .stock {
+    font-weight: 200;
+    font-size: 14px;
+    line-height: 21px;
     color: #979797;
     margin-bottom: 8px;
 }
+
+.page-details .store-heading .stock .available {
+    color: #007bff;
+    font-weight: 500;
+}
+
+.page-details .store-heading .stock .empty {
+    color: #ff0000;
+    font-weight: 500;
+}
+
 .page-details .store-heading .price {
     font-weight: 500;
     font-size: 18px;
@@ -9814,6 +9832,64 @@ footer p {
     color: #0c0d36;
     margin-top: 15px;
 }
+
+.store-cart .product-qty {
+    display: flex;
+    font-size: 18px;
+    color: #0c0d36;
+    margin-top: 15px;
+}
+
+.quantity-input::-webkit-inner-spin-button,
+.quantity-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.store-cart .product-qty .field-qty {
+    position: relative;
+    display: flex;
+}
+
+.store-cart .product-qty button {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+}
+
+.store-cart .product-qty .btn-increment {
+    opacity: 70%;
+    width: 15px;
+    position: absolute;
+    right: 5px;
+}
+
+.store-cart .product-qty .btn-decrement {
+    opacity: 70%;
+    width: 15px;
+    position: absolute;
+    left: 5px;
+}
+
+.store-cart .product-qty .field-qty input {
+    width: 100%;
+    height: 30px;
+    border: 1px solid #bfc9d9;
+    border-radius: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.store-cart .product-qty .field-qty input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.1);
+}
+
 .store-cart .product-subtitle {
     font-size: 14px;
     color: #979797;
@@ -10165,6 +10241,12 @@ footer p {
     margin-top: 12px;
     font-weight: normal;
     font-size: 18px;
+    max-height: 2.8em; /* Sesuaikan tinggi maksimum yang Anda inginkan */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Batasi teks hingga 2 baris */
+    -webkit-box-orient: vertical;
 }
 .component-products .products-price {
     font-weight: 500;
