@@ -20,7 +20,8 @@ class TransactionDetail extends Model
       'price',
       'delivery_status',
       'code',
-      'notes'
+      'notes',
+      'quantity'
     ];
 
     /**

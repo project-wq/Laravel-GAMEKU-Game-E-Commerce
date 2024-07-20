@@ -100,12 +100,12 @@
 
                 @if ($carts > 0)
 
-                <img src="/images/icon-cart-filled.svg" alt="" />
+                <img src="/images/icon-cart-filled.svg" alt=""/>
                 <div class="cart-badge">{{ $carts }}</div>
 
                 @else
 
-                <img src="/images/icon-cart-empty.svg" alt="" />
+                <img src="/images/icon-cart-empty.svg" alt=""/>
 
                 @endif
                 

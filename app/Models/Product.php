@@ -12,44 +12,42 @@ class Product extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = [
-        'name', 'users_id', 'categories_id', 'price', 'description', 'slug'
-    ];
+    protected $fillable = ['name', 'users_id', 'categories_id', 'price', 'description', 'slug', 'quantity'];
 
-    protected $hidden = [
-        
-    ];
+    protected $hidden = [];
 
-    public function scopeFilter($query, array $filters){
-
-        $query->when($filters['search'] ?? false, function($query, $search) {
-            return $query->where(function($query) use ($search) {
-                 $query->where('name', 'like', '%' . $search . '%')->orWhere('description', 'like', '%' . $search . '%');
-             });
-         });
-        
-        $query->when($filters['category'] ?? false, function($query, $category){
-            return $query->whereHas('category', function($query) use ($category){
-                $query->where('slug', $category);
+    public function scopeFilter($query, array $filters)
+    {
+        $query->when($filters['search'] ?? false, function ($query, $search) {
+            return $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')->orWhere('description', 'like', '%' . $search . '%');
             });
         });
 
-         
-    }  
+        $query->when($filters['category'] ?? false, function ($query, $category) {
+            return $query->whereHas('category', function ($query) use ($category) {
+                $query->where('slug', $category);
+            });
+        });
+    }
 
-    public function galleries(){
+    public function galleries()
+    {
         return $this->hasMany(ProductGallery::class, 'products_id', 'id');
     }
-    
-    public function review(){
+
+    public function review()
+    {
         return $this->hasMany(Review::class, 'products_id', 'id');
     }
-    
-    public function user(){
+
+    public function user()
+    {
         return $this->hasOne(User::class, 'id', 'users_id');
     }
-    
-    public function category(){
+
+    public function category()
+    {
         return $this->belongsTo(Category::class, 'categories_id', 'id');
     }
 }

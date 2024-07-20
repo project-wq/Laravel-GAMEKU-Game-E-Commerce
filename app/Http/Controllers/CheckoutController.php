@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\User;
+use App\Models\Product;
 
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -69,6 +70,19 @@ class CheckoutController extends Controller
             ->where('users_id', Auth::user()->id)
             ->get();
 
+        //? Check if Stock Product Empty
+        foreach ($carts as $cart) {
+            $product = Product::find($cart->product->id);
+            if ($product->quantity < $cart->quantity) {
+                return response()->json(
+                    [
+                        'status' => 'error',
+                        'message' => 'Stok produk ' . $cart->product->name . ' tidak mencukupi.',
+                    ],
+                );
+            }
+        }
+
         //? Transaction Create
         $transaction = Transaction::create([
             'users_id' => Auth::user()->id,
@@ -94,7 +108,7 @@ class CheckoutController extends Controller
         $transaction->snap_token = $snapToken;
         $transaction->save();
 
-        // Foreach Transaction Detail
+        //? Foreach Transaction Detail
         foreach ($carts as $cart) {
             $code = $this->generateUniqueCode('STF', $user->email);
 
@@ -105,7 +119,15 @@ class CheckoutController extends Controller
                 'delivery_status' => 'PENDING',
                 'code' => $code,
                 'notes' => $cart->notes,
+                'quantity' => $cart->quantity,
             ]);
+
+            //? Reduce Product Stock
+            $product = Product::find($cart->product->id);
+            if ($product) {
+                $product->quantity -= $cart->quantity;
+                $product->save();
+            }
 
             $sellerIds[] = $cart->product->users_id;
         }

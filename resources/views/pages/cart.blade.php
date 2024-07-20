@@ -69,7 +69,9 @@
                                             <div class="product-title">{{ $cart->product->user->name }}</div>
                                         </td>
                                         <td style="width: 15%;">
-                                            <div class="product-title" id="product-price">@money($cart->product->price)</div>
+                                            <div class="product-title cart-product-price"
+                                                id="cart-product-price-{{ $cart->id }}">
+                                                @money($cart->product->price)</div>
                                             {{-- <div class="product-subtitle">USD</div> --}}
                                         </td>
                                         <td style="width: 20%;">
@@ -85,7 +87,8 @@
                                                         </svg>
                                                     </button>
                                                     <input type="number" name="quantity" value="{{ $cart->quantity }}"
-                                                        class="quantity-input" id="quantity-input">
+                                                        class="quantity-input cart-product-qty"
+                                                        id="cart-product-qty-{{ $cart->id }}">
                                                     <button class="btn-increment">
                                                         <svg width="100%" height="100%" viewBox="0 0 24 24"
                                                             fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -197,7 +200,7 @@
                         </div>
                     </div>
 
-                    <div class="row" data-aos="fade-up" data-aos-delay="200">
+                    {{--  <div class="row" data-aos="fade-up" data-aos-delay="200">
                         <div class="col-4 col-md-2">
                             <div class="product-title" id="total-price-product">@money($Total ?? 0)</div>
                             <div class="product-subtitle">Total</div>
@@ -208,13 +211,59 @@
                             <div class="product-title text-success" id="total-price">@money($Total ?? 0)</div>
                             <div class="product-subtitle">Total</div>
                         </div>
+
+
                         <div class="col-8 col-md-3">
                             <button type="submit" id="pay-button" class="btn btn-primary mt-4 px-4 btn-block">
                                 Checkout Now
                             </button>
-                            {{--    <button type="submit" class="btn btn-primary mt-4 px-4 btn-block">
-                                Checkout Now
-                            </button> --}}
+
+                        </div>
+                    </div> --}}
+                    <div>
+                        <hr class="sidebar-divider">
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                @foreach ($carts as $cart)
+                                    <div class="row">
+                                        <div class="col-md-2">
+                                            {{ $cart->product->name }} ( x<span
+                                                id="product-qty-{{ $cart->id }}">{{ $cart->quantity }}</span> ):
+                                        </div>
+                                        <div class="col-md-3" id="product-price-{{ $cart->id }}">
+                                            @money($cart->product->price * $cart->quantity)
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <p>Layanan Aplikasi : </p>
+                            </div>
+                            <div class="col-md-3">
+                                <p> @money($tempTax)</p>
+                            </div>
+                        </div>
+                        <hr class="sidebar-divider">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <p>Total : </p>
+                            </div>
+                            <div class="col-md-3">
+                                <p id="total-price">@money($Total)</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+
+                                @csrf
+                                <button type="submit" href="" class="btn btn-primary btn-icon-split"
+                                    style="width: 100%;"><span class="text"><i class="fas fa-cart-plus"
+                                            style="padding-right: 5px"></i>Checkout</span></button>
+
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -233,11 +282,11 @@
                 event.preventDefault();
 
                 var formData = new FormData(this);
-              /*   console.log('FormData:');
-                for (var pair of formData.entries()) {
-                    console.log(pair[0] + ': ' + pair[1]);
-                }
-                return; */
+                /*   console.log('FormData:');
+                  for (var pair of formData.entries()) {
+                      console.log(pair[0] + ': ' + pair[1]);
+                  }
+                  return; */
 
                 $.ajax({
                     url: $(this).attr('action'),
@@ -246,22 +295,28 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
+                        if (response.status === "error") {
+                            alert(response.message);
+                        }
 
-                        snap.pay(response.snap_token, {
-                            onSuccess: function(result) {
-                                console.log('Payment successful:', result);
-                                window.location.href =
-                                    '{{ route('checkout-success') }}'
-                            },
-                            onPending: function(result) {
-                                console.log('Payment pending:', result);
+                        if (response.status === "success") {
+                            snap.pay(response.snap_token, {
+                                onSuccess: function(result) {
+                                    console.log('Payment successful:', result);
+                                    window.location.href =
+                                        '{{ route('checkout-success') }}'
+                                },
+                                onPending: function(result) {
+                                    console.log('Payment pending:', result);
 
-                            },
-                            onError: function(result) {
-                                console.error('Payment error:', result);
+                                },
+                                onError: function(result) {
+                                    console.error('Payment error:', result);
 
-                            }
-                        });
+                                }
+                            });
+                        }
+
                     },
                     error: function(xhr, status, error) {
                         console.error('Error:', error);
@@ -270,51 +325,8 @@
             });
         });
     </script>
-    {{--  <script type="text/javascript">
-        document.getElementById('pay-button').onclick = function() {
-            // SnapToken acquired from previous step
-            snap.pay('<?= $snapToken ?>', {
-                // Optional
-                onSuccess: function(result) {
-                    /* You may add your own js here, this is just example */
-                    document.getElementById('result-json').innerHTML += JSON.stringify(result, null, 2);
-                },
-                // Optional
-                onPending: function(result) {
-                    /* You may add your own js here, this is just example */
-                    document.getElementById('result-json').innerHTML += JSON.stringify(result, null, 2);
-                },
-                // Optional
-                onError: function(result) {
-                    /* You may add your own js here, this is just example */
-                    document.getElementById('result-json').innerHTML += JSON.stringify(result, null, 2);
-                }
-            });
-        };
-    </script> --}}
     <script>
         $(document).ready(function() {
-            function updateTotalPrice() {
-                let tax = 2500;
-                let totalProduct = 0;
-                let allTotal = 0 + tax;
-
-
-                $('.table-cart tbody tr').each(function() {
-                    let pricePerItem = parseInt($(this).find('#product-price').text().replace(/\D/g, ''),
-                        10);
-                    let quantity = parseInt($(this).find('.quantity-input').val());
-                    console.log(pricePerItem);
-
-                    let subtotal = pricePerItem * quantity;
-                    totalProduct += subtotal;
-                    allTotal += subtotal;
-                });
-
-
-                $('#total-price-product').text('Rp. ' + totalProduct.toLocaleString('id-ID'));
-                $('#total-price').text('Rp. ' + allTotal.toLocaleString('id-ID'));
-            }
 
             $('.btn-increment').on('click', function(e) {
                 e.preventDefault();
@@ -324,7 +336,7 @@
                 inputQuantity.val(quantity);
 
                 updateCartQuantity(quantity, cartId);
-                updateTotalPrice();
+                updateTotalPrice(cartId);
             });
 
             $('.btn-decrement').on('click', function(e) {
@@ -335,7 +347,7 @@
                 if (quantity >= 1) {
                     inputQuantity.val(quantity);
                     updateCartQuantity(quantity, cartId);
-                    updateTotalPrice();
+                    updateTotalPrice(cartId);
                 }
             });
 
@@ -345,7 +357,7 @@
 
                 if (quantity >= 1) {
                     updateCartQuantity(quantity, cartId);
-                    updateTotalPrice();
+                    updateTotalPrice(cartId);
                 } else {
                     console.log('Quantity tidak boleh kurang dari 1');
                 }
@@ -359,11 +371,47 @@
                 $noteTextarea.on('blur', function() {
                     let cartId = $(this).siblings('input[name="cart-id"]').val();
                     let notes = $(this).val();
-                    console.log(cartId);
 
                     updateCartNotes(notes, cartId);
                 });
             });
+
+
+
+            function updateTotalPrice(cartId) {
+                let tax = 2500;
+                let totalPrice = 0;
+
+                $('.table-cart tbody tr').each(function() {
+                    let pricePerItem = parseInt($(this).find('.cart-product-price').text().replace(/\D/g,
+                        ''), 10);
+                    let quantity = parseInt($(this).find('.cart-product-qty').val(), 10);
+                    console.log(pricePerItem, quantity);
+
+                    let allPricePerItem = pricePerItem * quantity;
+                    totalPrice += allPricePerItem;
+                });
+
+
+                let pricePerItem = parseInt($(`#cart-product-price-${cartId}`).text().replace(/\D/g, ''),
+                    10);
+                let quantity = parseInt($(`#cart-product-qty-${cartId}`).val());
+
+                let pricePerItemOnTotal = parseInt($('#product-price-' + cartId).text().replace(
+                    /\D/g, ''), 10);
+                let quantityOnTotal = parseInt($('#product-qty-' + cartId).text());
+
+                $('#product-qty-' + cartId).text(quantity);
+                pricePerItemOnTotal = pricePerItem * quantity;
+                $('#product-price-' + cartId).text(moneyFormat(pricePerItemOnTotal));
+
+                $('#total-price').text(moneyFormat(totalPrice + tax));
+
+            }
+
+            function moneyFormat(value) {
+                return 'Rp. ' + value.toLocaleString('id-ID');
+            }
 
             function updateCartNotes(notes, cartId) {
                 $.ajax({
