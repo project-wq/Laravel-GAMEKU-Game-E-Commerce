@@ -20,11 +20,15 @@ class DetailController extends Controller
         $product = Product::with(['galleries', 'user', 'category'])
             ->where('slug', $id)
             ->firstOrFail();
+        
+        $productsSeller = Product::with(['galleries', 'user', 'category'])
+            ->where('users_id', $product->users_id)
+            ->get();
 
         $reviews = Review::with(['user', 'product'])
             ->where('products_id', $product->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(3);
         $reviewCount = $reviews->count();
 
         $rateSum = Review::with(['user', 'product'])
@@ -52,6 +56,7 @@ class DetailController extends Controller
 
         return view('pages.detail', [
             'product' => $product,
+            'productsSeller' => $productsSeller,
             'reviews' => $reviews,
             'reviewCount' => $reviewCount,
             'rate' => $rate,
@@ -59,19 +64,20 @@ class DetailController extends Controller
     }
 
     public function add(Request $request, $id)
-    {
+    {   
+    
         $userId = Auth::user()->id;
 
         $cartItem = Cart::where('products_id', $id)->where('users_id', $userId)->first();
 
         if ($cartItem) {
-            $cartItem->quantity += 1;
+            $cartItem->quantity += $request->quantity;
             $cartItem->save();
         } else {
             $data = [
                 'products_id' => $id,
                 'users_id' => $userId,
-                'quantity' => 1,
+                'quantity' => $request->quantity,
             ];
 
             Cart::create($data);

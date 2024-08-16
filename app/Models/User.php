@@ -29,6 +29,7 @@ class User extends Authenticatable
         'store_status',
         'metode_pembayaran',
         'img_profile',
+        'store_slug',
         
     ];
 
